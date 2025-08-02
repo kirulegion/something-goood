@@ -1,0 +1,40 @@
+# ==================================
+# Rust project .gitignore
+# ==================================
+
+# Target directory (compiled files)
+/target/
+
+# Cargo package cache
+**/*.rs.bk
+
+# Binaries
+**/*.exe
+**/*.dll
+**/*.so
+**/*.dylib
+**/*.a
+**/*.lib
+
+# Backup/lock files
+**/*~
+**/#*#
+**/*.swp
+**/.DS_Store
+Cargo.lock
+
+# Logs
+*.log
+
+# Mac and system-specific
+.DS_Store
+Thumbs.db
+
+# Optional: if you're using tools like dotenv or custom config
+.env
+.env.*
+
+# Optional: ignore test output or coverage
+/coverage/
+/test_output/
+
