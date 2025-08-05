@@ -1,12 +1,17 @@
 use actix_web::{HttpRequest, HttpResponse, cookie::Cookie, get, http::header, web};
 use oauth2::{
-    basic::BasicClient, reqwest::async_http_client, AuthorizationCode, CsrfToken, PkceCodeChallenge, PkceCodeVerifier, Scope
+    AuthorizationCode, CsrfToken, PkceCodeChallenge, PkceCodeVerifier, Scope, basic::BasicClient,
+    reqwest::async_http_client,
 };
 use serde_json::json;
 use std::collections::HashMap;
+use crate::oauth;
 
-#[get("/auth/google")]
-pub async fn google_login(oauth_client: web::Data<BasicClient>) -> HttpResponse {
+use crate::auth::{client::OauthProvider};
+
+#[get("/auth/{provider}")]
+pub async fn login(provider : web::Path<OauthProvider>) -> HttpResponse {
+    let oauth_client = oauth(provider.into_inner());
     let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
 
     let (auth_url, csfr_token) = oauth_client
@@ -35,13 +40,12 @@ pub async fn google_login(oauth_client: web::Data<BasicClient>) -> HttpResponse 
         .finish()
 }
 
-#[get("/auth/google/callback")]
-pub async fn google_callback(
+#[get("/auth/{provider}/callback")]
+pub async fn callback(
     request: HttpRequest,
     params: web::Query<HashMap<String, String>>,
     oauth_client: web::Data<BasicClient>,
-) -> HttpResponse { 
-
+) -> HttpResponse {
     //Extracting the code for the exchanging the acess-token.
     let code = match params.get("code") {
         Some(code) => code,
@@ -50,13 +54,12 @@ pub async fn google_callback(
                 .json(json!({"error" : "Missing authorization code"}));
         }
     };
-    
+
     //Extracting the state from the url to valid that isn't a CSRF attack.
     let state_from_query = match params.get("state") {
         Some(state) => state,
         None => return HttpResponse::BadRequest().json(json!({"Error" : "MIssing the state"})),
     };
-    
 
     let pkce_verifier_from_query = match request.cookie("oauth_pkce_verifier") {
         Some(cookie) => cookie.value().to_string(),

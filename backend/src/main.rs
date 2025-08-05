@@ -2,10 +2,12 @@ use actix_web::{web, App, HttpServer};
 use dotenvy::dotenv;
 use std::env;
 
-use crate::routes::user;
+use crate::{auth::client::{oauth}, routes::user};
 
+mod auth;
 mod routes;
 mod models;
+mod schema;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -18,11 +20,14 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Could not connect to DB");
 
+
     HttpServer::new(move || {
         App::new()
         .app_data(web::Data::new(pool.clone()))
         .service(user::insert)
         .service(user::update)
+        .service(auth::route::login)
+        .service(auth::route::callback)
     })
     .bind(("127.0.0.1",8080))?
     .run()
